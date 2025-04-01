@@ -27,14 +27,15 @@ class Chronometre : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val competition = intent.getSerializableExtra("competition") as Competition
-            val course = intent.getSerializableExtra("course") as Course
+            val competition = intent.getSerializableExtra("competition") as? Competition
+            val course = intent.getSerializableExtra("course") as? Course
+
             ParkourTheme {
-                course.id?.let { competition.hasRetry?.let { it2 ->
-                    ChronometreScreen(viewModel = viewModel, parkourId = it,
-                        it2
-                    )
-                } }
+                competition?.hasRetry?.let { retryAllowed ->
+                    course?.id?.let { courseId ->
+                        ChronometreScreen(viewModel, courseId, retryAllowed)
+                    }
+                }
             }
         }
     }
@@ -42,206 +43,69 @@ class Chronometre : ComponentActivity() {
 
 @Composable
 fun ChronometreScreen(viewModel: ChronometreViewModel, parkourId: Int, hasRetry: Boolean) {
-    val obstacles = viewModel.obstacles.value
-    var hasFell by remember { mutableStateOf(false) }
-    var lastLapTime by remember { mutableStateOf(0L) }
-    var isFinished by remember { mutableStateOf(false) }
-    var currentObstacleIndex by remember { mutableStateOf(0) }
-    var time by remember { mutableStateOf(0L) }
+    val obstacles by viewModel.obstacles.collectAsState(emptyList())
     var isRunning by remember { mutableStateOf(false) }
+    var currentTime by remember { mutableStateOf(0L) }
+    var lastLapTime by remember { mutableStateOf(0L) }
+    var currentObstacleIndex by remember { mutableStateOf(0) }
+    var hasFallen by remember { mutableStateOf(false) }
+    var isFinished by remember { mutableStateOf(false) }
     val laps = remember { mutableStateListOf<Pair<String, String>>() }
 
-    // Charge les obstacles depuis l'API
-    LaunchedEffect(parkourId) {
-        viewModel.fetchObstacles(parkourId)
-    }
-
-    // Timer
     LaunchedEffect(isRunning) {
-        val startTime = System.currentTimeMillis() - time
+        val startTime = System.currentTimeMillis() - currentTime
         while (isRunning) {
-            time = System.currentTimeMillis() - startTime
-            delay(1L)
+            currentTime = System.currentTimeMillis() - startTime
+            delay(10L)
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        ObstacleDisplay(obstacles, currentObstacleIndex)
-        ChronometerDisplay(time)
-        ChronometerButtons(
-            isRunning,
-            onToggle = { isRunning = !isRunning },
-            onReset = {
-                time = 0L
-                currentObstacleIndex = 0
-                laps.clear()
-                hasFell = false
-                lastLapTime = 0L
-                isFinished = false
-            },
-            hasRetry = hasRetry,
-            hasFell = hasFell,
-            isFinished = isFinished,
-            onRestart = {
-                hasFell = true
-                if(laps.isNotEmpty()){
-                    time = laps.sumOf { parseTime(it.second) }
-                }
-                else{
-                    time = 0L
-                }
-            },
-            onLap = {
-                if (obstacles != null && currentObstacleIndex < obstacles.size) {
-                    val lapTime = time - lastLapTime
-                    laps.add(Pair(obstacles[currentObstacleIndex].obstacleName ?: "Inconnu", formatTime(lapTime)))
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Obstacle: ${obstacles.getOrNull(currentObstacleIndex)?.obstacleName ?: "N/A"}", style = MaterialTheme.typography.headlineMedium)
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text(formatTime(currentTime), style = MaterialTheme.typography.displayLarge)
+        }
 
-                    lastLapTime = time
-
-                    if (currentObstacleIndex == obstacles.size - 1) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Button(onClick = { isRunning = !isRunning }) {
+                Text(if (isRunning) "Pause" else "Démarrer")
+            }
+            Button(onClick = {
+                if (isRunning) {
+                    val lapTime = currentTime - lastLapTime
+                    laps.add(obstacles.getOrNull(currentObstacleIndex)?.obstacleName.orEmpty() to formatTime(lapTime))
+                    lastLapTime = currentTime
+                    if (currentObstacleIndex == obstacles.lastIndex) {
                         isRunning = false
                         isFinished = true
-
                     } else {
                         currentObstacleIndex++
                     }
+                } else {
+                    currentTime = 0L
+                    lastLapTime = 0L
+                    laps.clear()
+                    currentObstacleIndex = 0
+                    isFinished = false
+                    hasFallen = false
                 }
-            },
-            isLapEnabled = obstacles != null && currentObstacleIndex < obstacles.size
-        )
-        LapList(laps)
-    }
-}
-
-// Affichage de l'obstacle en cours
-@Composable
-fun ObstacleDisplay(obstacles: List<CourseObstacle>?, currentObstacleIndex: Int) {
-    Text(
-        text = "Obstacle : ${obstacles?.getOrNull(currentObstacleIndex)?.obstacleName ?: ""}",
-        style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 75.dp)
-    )
-}
-
-// Affichage du chronomètre
-@Composable
-fun ChronometerDisplay(time: Long) {
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = formatTime(time),
-            style = MaterialTheme.typography.displayLarge
-        )
-    }
-}
-
-// Boutons de contrôle du chronomètre
-@Composable
-fun ChronometerButtons(
-    isRunning: Boolean,
-    onToggle: () -> Unit,
-    onReset: () -> Unit,
-    hasRetry: Boolean,
-    hasFell: Boolean,
-    onRestart: () -> Unit,
-    onLap: () -> Unit,
-    isLapEnabled: Boolean,
-    isFinished: Boolean
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Bouton "Démarrer/Pause"
-            Button(
-                onClick = onToggle,
-                enabled = !isFinished,
-                modifier = Modifier.weight(1f)
-
-            ) {
-                Text(if (isRunning) "Pause" else "Démarrer")
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Bouton "Tour" (si le chrono tourne) ou "Réinitialiser" (si en pause)
-            Button(
-                onClick = if (isRunning) onLap else onReset,
-                enabled = if (isRunning) isLapEnabled else true,
-                colors = if (isRunning) ButtonDefaults.buttonColors() else ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    if (isRunning) "Tour" else "Réinitialiser",
-                    color = if (!isRunning) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
-                )
+            }) {
+                Text(if (isRunning) "Tour" else "Réinitialiser")
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(modifier = Modifier.height(48.dp), contentAlignment = Alignment.Center) {
-            if (hasRetry && !isRunning) {
-                Button(
-                    onClick = onRestart,
-                    enabled = !hasFell && !isFinished,
-                    modifier = Modifier.width(200.dp)
-                ) {
-                    Text("Recommencer obstacle")
-                }
+        if (hasRetry && !isRunning) {
+            Button(onClick = { hasFallen = true; currentTime = laps.sumOf { parseTime(it.second) } }) {
+                Text("Recommencer obstacle")
             }
         }
-    }
-}
 
-
-// Liste des temps (laps)
-@Composable
-fun LapList(laps: List<Pair<String, String>>) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        // Légende
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "Obstacle", style = MaterialTheme.typography.labelLarge)
-            Text(text = "Temps", style = MaterialTheme.typography.labelLarge)
-        }
-
-        // Liste des tours
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
             items(laps) { (obstacleName, lapTime) ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = obstacleName, style = MaterialTheme.typography.bodyLarge)
-                        Text(text = lapTime, style = MaterialTheme.typography.bodyLarge)
+                Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(obstacleName, style = MaterialTheme.typography.bodyLarge)
+                        Text(lapTime, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -249,8 +113,6 @@ fun LapList(laps: List<Pair<String, String>>) {
     }
 }
 
-
-// Convertit un temps en String
 fun formatTime(time: Long): String {
     val minutes = (time / 60000) % 60
     val seconds = (time / 1000) % 60
@@ -258,12 +120,7 @@ fun formatTime(time: Long): String {
     return String.format("%02d:%02d:%03d", minutes, seconds, milliseconds)
 }
 
-// Convertit un string en temps (nombre de millisecondes)
 fun parseTime(timeString: String): Long {
     val parts = timeString.split(":").map { it.toIntOrNull() ?: 0 }
-    return if (parts.size == 3) {
-        (parts[0] * 60000L) + (parts[1] * 1000L) + parts[2]
-    } else {
-        0L
-    }
+    return if (parts.size == 3) (parts[0] * 60000L) + (parts[1] * 1000L) + parts[2] else 0L
 }
