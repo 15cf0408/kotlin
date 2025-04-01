@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.but.parkour.BuildConfig
 import com.but.parkour.clientkotlin.apis.CompetitionsApi
 import com.but.parkour.clientkotlin.apis.CoursesApi
 import com.but.parkour.clientkotlin.infrastructure.ApiClient
@@ -15,110 +14,90 @@ import com.but.parkour.clientkotlin.models.CourseUpdate
 import kotlinx.coroutines.launch
 
 class ParkourViewModel : ViewModel() {
-    private val _parkours = MutableLiveData<List<Course>>()
+    private val _courses = MutableLiveData<List<Course>>()
+    val courses: LiveData<List<Course>> get() = _courses
 
-    val parkours: LiveData<List<Course>> = _parkours
+    private val apiClient = ApiClient(bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r")
+    private val competitionsApi = apiClient.createService(CompetitionsApi::class.java)
+    private val coursesApi = apiClient.createService(CoursesApi::class.java)
 
-    private val apiClient = ApiClient(
-        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
-    )
-
-    private val competitionApi = apiClient.createService(CompetitionsApi::class.java)
-    private val courseApi = apiClient.createService(CoursesApi::class.java)
-
-    fun fetchCourses(competitionId : Int) {
+    fun chargerCourses(eventId: Int) {
         viewModelScope.launch {
             try {
                 Log.d("ParkourViewModel", "Fetching courses...")
-
-                val call = competitionApi.getCompetitionCourses(competitionId)
-
-                apiClient.fetchData(
-                    call,
-                    onSuccess = { data, statusCode ->
-                        Log.d("ParkourViewModel", "courses received: $data")
-                        _parkours.postValue(data ?: emptyList())
+                val response = competitionsApi.getCompetitionCourses(eventId)
+                apiClient.fetchData(response,
+                    onSuccess = { data, _ ->
+                        _courses.postValue(data ?: emptyList())
+                        Log.d("ParkourViewModel", "Courses retrieved: ${data?.size ?: 0}")
                     },
-                    onError = { errorMessage, statusCode ->
-                        Log.e("ParkourViewModel", "Error: $errorMessage")
-                        _parkours.postValue(emptyList())
+                    onError = { error, _ ->
+                        Log.e("ParkourViewModel", "Error fetching courses: $error")
+                        _courses.postValue(emptyList())
                     }
                 )
-
-            } catch (e: Exception) {
-                Log.e("ParkourViewModel", "Exception: ${e.message}", e)
-                _parkours.postValue(emptyList())
+            } catch (exception: Exception) {
+                Log.e("ParkourViewModel", "Exception fetching courses: ${exception.message}", exception)
+                _courses.postValue(emptyList())
             }
         }
     }
 
-    fun addCourse(course: CourseCreate) {
+    fun ajoutCourse(course: CourseCreate) {
         viewModelScope.launch {
             try {
-                Log.d("ParkourViewModel", "Adding course...")
-
-                val call = courseApi.addCourse(course)
-
-                apiClient.fetchData(
-                    call,
-                    onSuccess = { data, statusCode ->
-                        Log.d("ParkourViewModel", "course added: $data")
+                Log.d("ParkourViewModel", "Adding new course...")
+                val response = coursesApi.addCourse(course)
+                apiClient.fetchData(response,
+                    onSuccess = { data, _ ->
+                        Log.d("ParkourViewModel", "Course added successfully: $data")
                     },
-                    onError = { errorMessage, statusCode ->
-                        Log.e("ParkourViewModel", "Error: $errorMessage")
+                    onError = { error, _ ->
+                        Log.e("ParkourViewModel", "Error adding course: $error")
                     }
                 )
-
-            } catch (e: Exception) {
-                Log.e("ParkourViewModel", "Exception: ${e.message}", e)
+            } catch (exception: Exception) {
+                Log.e("ParkourViewModel", "Exception adding course: ${exception.message}", exception)
             }
         }
     }
 
-    fun removeCourse(courseId: Int, competitionId: Int) {
+    fun supprimerCourse(courseId: Int, eventId: Int) {
         viewModelScope.launch {
             try {
-                Log.d("ParkourViewModel", "Removing course...")
-
-                val call = courseApi.deleteCourse(courseId)
-
-                apiClient.fetchData(
-                    call,
-                    onSuccess = { data, statusCode ->
-                        fetchCourses(competitionId)
-                        Log.d("ParkourViewModel", "course removed: $data")
+                Log.d("ParkourViewModel", "Deleting course with ID: $courseId")
+                val response = coursesApi.deleteCourse(courseId)
+                apiClient.fetchData(response,
+                    onSuccess = { _, _ ->
+                        Log.d("ParkourViewModel", "Course deleted successfully")
+                        chargerCourses(eventId)
                     },
-                    onError = { errorMessage, statusCode ->
-                        Log.e("ParkourViewModel", "Error: $errorMessage")
-                        Log.e("ParkourViewModel", "Status code: $statusCode")
-                        Log.e("ParkourViewModel", "Course ID: $courseId")
+                    onError = { error, _ ->
+                        Log.e("ParkourViewModel", "Error deleting course: $error")
                     }
                 )
-
-            } catch (e: Exception) {
-                Log.e("ParkourViewModel", "Exception: ${e.message}", e)
+            } catch (exception: Exception) {
+                Log.e("ParkourViewModel", "Exception deleting course: ${exception.message}", exception)
             }
         }
     }
 
-    fun updateCourse(courseId: Int, course: CourseUpdate){
+    fun updateCourse(courseId: Int, updatedCourse: CourseUpdate) {
         viewModelScope.launch {
-            try{
-                val call = courseApi.updateCourse(courseId, course)
-
-                apiClient.fetchData(
-                    call,
-                    onSuccess = { data, statusCode ->
-                        Log.d("ParkourViewModel", "course updated: $course")
+            try {
+                Log.d("ParkourViewModel", "Updating course with ID: $courseId")
+                val response = coursesApi.updateCourse(courseId, updatedCourse)
+                apiClient.fetchData(response,
+                    onSuccess = { _, _ ->
+                        Log.d("ParkourViewModel", "Course updated successfully")
                     },
-                    onError = { errorMessage, statusCode ->
-                        Log.e("ParkourViewModel", "Error: $errorMessage")
+                    onError = { error, _ ->
+                        Log.e("ParkourViewModel", "Error updating course: $error")
                     }
                 )
-            }catch (e: Exception){
-                Log.e("ParkourViewModel", "Exception: ${e.message}", e)
+            } catch (exception: Exception) {
+                Log.e("ParkourViewModel", "Exception updating course: ${exception.message}", exception)
             }
         }
     }
-
 }
