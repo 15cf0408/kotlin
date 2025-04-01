@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.but.parkour.clientkotlin.models.Competition
 import com.but.parkour.ui.theme.ParkourTheme
@@ -25,7 +24,7 @@ import com.but.parkour.EditionMode
 import com.but.parkour.clientkotlin.models.CompetitionUpdate
 import com.but.parkour.competition.viewmodel.CompetitionViewModel
 import com.but.parkour.concurrents.view.InscriptionConcurent
-import com.but.parkour.parkour.view.ListeParkours
+import com.but.parkour.courses.view.ListeParkours
 
 class DetailsCompetition : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

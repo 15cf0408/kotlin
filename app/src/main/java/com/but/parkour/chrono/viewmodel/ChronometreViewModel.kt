@@ -1,4 +1,4 @@
-package com.but.parkour.parkour.viewmodel
+package com.but.parkour.courses.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

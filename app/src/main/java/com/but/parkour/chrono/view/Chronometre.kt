@@ -15,8 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.but.parkour.clientkotlin.models.Competition
 import com.but.parkour.clientkotlin.models.Course
-import com.but.parkour.clientkotlin.models.CourseObstacle
-import com.but.parkour.parkour.viewmodel.ChronometreViewModel
+import com.but.parkour.courses.viewmodel.ChronometreViewModel
 import com.but.parkour.ui.theme.ParkourTheme
 import kotlinx.coroutines.delay
 

@@ -32,7 +32,7 @@
             android:label="@string/title_activity_liste_obstacles"
             android:theme="@style/Theme.Parkour" />
         <activity
-            android:name=".parkour.view.AjoutParkour"
+            android:name=".courses.view.AjoutParkour"
             android:exported="false"
             android:label="@string/title_activity_ajout_parkour"
             android:theme="@style/Theme.Parkour" />
@@ -42,7 +42,7 @@
             android:label="@string/title_activity_ajout_competition"
             android:theme="@style/Theme.Parkour" />
         <activity
-            android:name=".parkour.view.ListeParkours"
+            android:name=".courses.view.ListeParkours"
             android:exported="false"
             android:label="@string/title_activity_liste_parkours"
             android:theme="@style/Theme.Parkour" />
@@ -87,12 +87,12 @@
             android:label="Details competition"
             android:theme="@style/Theme.Parkour" />
         <activity
-            android:name=".parkour.view.DetailParkour"
+            android:name=".courses.view.DetailParkour"
             android:exported="false"
             android:label="Details course"
             android:theme="@style/Theme.Parkour" />
         <activity
-            android:name=".parkour.view.ModifierCourse"
+            android:name=".courses.view.ModifierCourse"
             android:exported="false"
             android:label="Modifier course"
             android:theme="@style/Theme.Parkour" />

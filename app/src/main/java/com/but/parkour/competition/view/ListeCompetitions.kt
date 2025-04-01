@@ -146,7 +146,7 @@ fun TitreCompetition() {
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Parkour !",
+            text = "Les Guerriers Ninjas !",
             modifier = Modifier.padding(bottom = 24.dp),
             style = MaterialTheme.typography.headlineLarge.copy(
                 color = Color(0xFFD32F2F),
