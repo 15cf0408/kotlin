@@ -17,7 +17,7 @@ class CompetitionViewModel : ViewModel() {
     private val _competitions = MutableLiveData<List<Competition>>()
     val competitions: LiveData<List<Competition>> = _competitions
     private val apiClient = ApiClient(
-        bearerToken = BuildConfig.API_TOKEN
+        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
     )
 
     val competitionApi = apiClient.createService(CompetitionsApi::class.java)

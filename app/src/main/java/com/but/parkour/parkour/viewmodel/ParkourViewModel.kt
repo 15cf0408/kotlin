@@ -20,7 +20,7 @@ class ParkourViewModel : ViewModel() {
     val parkours: LiveData<List<Course>> = _parkours
 
     private val apiClient = ApiClient(
-        bearerToken = BuildConfig.API_TOKEN
+        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
     )
 
     private val competitionApi = apiClient.createService(CompetitionsApi::class.java)

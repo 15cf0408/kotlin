@@ -30,7 +30,7 @@ class CompetitorViewModel : ViewModel() {
     val competitorsCourse: LiveData<List<Competitor>> = _competitorsCourse
 
     private val apiClient = ApiClient(
-        bearerToken = BuildConfig.API_TOKEN
+        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
     )
 
 

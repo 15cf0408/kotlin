@@ -17,7 +17,7 @@ class GestionConcurrentViewModel: ViewModel() {
     val competitors: LiveData<List<Competitor>> = _competitors
 
     private val apiClient = ApiClient(
-        bearerToken = BuildConfig.API_TOKEN
+        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
     )
 
     private val competitorApi = apiClient.createService(CompetitorsApi::class.java)

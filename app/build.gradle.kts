@@ -23,11 +23,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField(
-            "String",
-            "API_TOKEN",
-            "${env.getProperty("API_TOKEN", "")}"
-        )
+
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

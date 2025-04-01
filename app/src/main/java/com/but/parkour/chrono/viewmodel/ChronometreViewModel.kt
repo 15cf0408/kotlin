@@ -17,7 +17,7 @@ class ChronometreViewModel : ViewModel() {
     val obstacles: LiveData<List<CourseObstacle>> = _obstacles
 
     private val apiClient = ApiClient(
-        bearerToken = BuildConfig.API_TOKEN
+        bearerToken = "GkZ7jDp6pyzKRos3GgnlUvX6wU7tR7UMrB9y1mQINGJzOiXPGSHqKoPgIVaqYh1r"
     )
 
     private val courseApi = apiClient.createService(CoursesApi::class.java)
