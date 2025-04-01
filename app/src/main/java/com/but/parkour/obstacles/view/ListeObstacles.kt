@@ -8,29 +8,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,15 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.but.parkour.EditionMode
-import com.but.parkour.clientkotlin.models.Course
-import com.but.parkour.clientkotlin.models.CourseObstacle
+import com.but.parkour.clientkotlin.models.*
 import com.but.parkour.obstacles.ui.theme.ParkourTheme
 import com.but.parkour.obstacles.viewmodel.ObstaclesViewModel
-import androidx.compose.runtime.*
-import com.but.parkour.clientkotlin.models.AddCourseObstacleRequest
-import com.but.parkour.clientkotlin.models.Competition
-import com.but.parkour.clientkotlin.models.Obstacle
-import okhttp3.internal.notifyAll
 
 class ListeObstacles : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +43,7 @@ class ListeObstacles : ComponentActivity() {
                 }
                 val obstaclesCourse by obstacleViewModel.obstaclesCourse.observeAsState(initial = emptyList())
 
-                Scaffold (modifier = Modifier.fillMaxSize()){ innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ObstaclesPage(
                         obstacles = obstaclesCourse,
                         modifier = Modifier.padding(innerPadding),
@@ -88,44 +65,39 @@ fun ObstaclesPage(
     obstacleViewModel: ObstaclesViewModel,
     competitionStatus: Competition.Status
 ) {
-
     var obstaclesList by remember { mutableStateOf(obstacles) }
     LaunchedEffect(obstacles) {
         obstaclesList = obstacles
     }
-    if(parkour == null) {
-        Text("Aucune course dans ce parkour")
-        Log.d("ObstaclesPage", "Aucune course dans ce parkour : $parkour")
-    }else{
+    if (parkour == null) {
+        DisplayMessage("Aucune course dans ce parkour")
+    } else {
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Obstacles",
-                modifier = Modifier.padding(top = 16.dp)
-            )
-            ListObstacles(
+            HeaderText("Obstacles")
+            ObstaclesList(
                 obstacles = obstaclesList,
                 modifier = modifier.weight(1f),
                 obstacleViewModel = obstacleViewModel,
                 competitionStatus = competitionStatus
-            ){
+            ) {
                 obstacleViewModel.fetchCoursesObstacles(parkour.id!!)
             }
             Spacer(modifier = Modifier.height(16.dp))
 
             if (EditionMode.isEnable.value) {
-                AjoutObstacle(parkour, competitionStatus)
+                CreateObstacleButton(parkour, competitionStatus)
             }
         }
     }
 }
 
 @Composable
-fun ListObstacles(
-    obstacles : List<CourseObstacle>,
+fun ObstaclesList(
+    obstacles: List<CourseObstacle>,
     modifier: Modifier = Modifier,
     obstacleViewModel: ObstaclesViewModel,
     competitionStatus: Competition.Status,
@@ -139,75 +111,87 @@ fun ListObstacles(
             .padding(horizontal = 16.dp)
     ) {
         items(obstacles) { item ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .border(3.dp, Color.Black, shape = MaterialTheme.shapes.medium)
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = item.obstacleName ?: "Unknown",
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                if(EditionMode.isEnable.value && competitionStatus == Competition.Status.not_ready) {
-                    Button(onClick = {
-                            selectedObstacle = item
-                            showDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red
-                        )
-                    ) {
-                        Text("Supprimer")
-                    }
-                }
-
-
-            }
+            ObstacleCard(
+                item = item,
+                onDeleteClick = {
+                    selectedObstacle = item
+                    showDialog = true
+                },
+                isDeletable = EditionMode.isEnable.value && competitionStatus == Competition.Status.not_ready
+            )
         }
     }
+
     if (showDialog && selectedObstacle != null) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Confirmation") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer cet obstacle ?") },
-            confirmButton = {
-                Button(onClick = {
-                        selectedObstacle?.let { onClickSupprimer(it, obstacleViewModel, onObstacleDeleted) }
-                        showDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red
-                    )
-                ) {
-                    Text("Oui")
-                }
+        ConfirmDeleteDialog(
+            onConfirm = {
+                selectedObstacle?.let { onObstacleDeleted() }
+                showDialog = false
             },
-            dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Non")
-                }
-            }
+            onDismiss = { showDialog = false }
         )
     }
 }
 
-
-
-
 @Composable
-fun AjoutObstacle(parkour: Course, competitionStatus: Competition.Status){
+fun ObstacleCard(item: CourseObstacle, onDeleteClick: () -> Unit, isDeletable: Boolean) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .border(3.dp, Color.Black, shape = MaterialTheme.shapes.medium)
+            .padding(4.dp)
+    ) {
+        Text(
+            text = item.obstacleName ?: "Unknown",
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
-    if(competitionStatus == Competition.Status.not_ready) {
-        DropDownMenuObstacle(parkour.id)
+        if (isDeletable) {
+            DeleteButton(onClick = onDeleteClick)
+        }
     }
-    CreerObstacleButton(parkour)
 }
 
 @Composable
-fun DropDownMenuObstacle(parkourId: Int?) {
+fun DeleteButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+    ) {
+        Text("Supprimer")
+    }
+}
+
+@Composable
+fun ConfirmDeleteDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirmation") },
+        text = { Text("Êtes-vous sûr de vouloir supprimer cet obstacle ?") },
+        confirmButton = {
+            Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
+                Text("Oui")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Non")
+            }
+        }
+    )
+}
+
+@Composable
+fun CreateObstacleButton(parkour: Course, competitionStatus: Competition.Status) {
+    if (competitionStatus == Competition.Status.not_ready) {
+        ObstacleDropdownMenu(parkour.id)
+    }
+    CreateNewObstacleButton(parkour)
+}
+
+@Composable
+fun ObstacleDropdownMenu(parkourId: Int?) {
     val obstaclesViewModel: ObstaclesViewModel = viewModel()
     obstaclesViewModel.fetchAllObstacles()
     val obstacles by obstaclesViewModel.allObstacles.observeAsState(initial = emptyList())
@@ -215,13 +199,11 @@ fun DropDownMenuObstacle(parkourId: Int?) {
     var expanded by remember { mutableStateOf(false) }
     var selectedObstacle by remember { mutableStateOf<Obstacle?>(null) }
 
-    Log.d("ObstaclesPage", "Obstacles: $obstacles")
     Column {
         Text(
-            text = selectedObstacle?.name ?: "Selectionnner un obstacle",
+            text = selectedObstacle?.name ?: "Sélectionner un obstacle",
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = true }
                 .padding(16.dp)
         )
         DropdownMenu(
@@ -234,28 +216,25 @@ fun DropDownMenuObstacle(parkourId: Int?) {
                         selectedObstacle = obstacle
                         expanded = false
                     },
-                    text = {
-                        Text(text = obstacle.name ?: "Unknown")
-                    }
+                    text = { Text(text = obstacle.name ?: "Unknown") }
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
-        if(parkourId != null){
-            AjoutObstacleButton(
-                selectedObstacle != null,
-                parkourId,
-                selectedObstacle,
-                onObstacleAdded = {
-                    selectedObstacle = null
-                }
+
+        if (parkourId != null) {
+            AddObstacleButton(
+                isEnabled = selectedObstacle != null,
+                parkourId = parkourId,
+                selectedObstacle = selectedObstacle,
+                onObstacleAdded = { selectedObstacle = null }
             )
         }
     }
 }
 
 @Composable
-fun AjoutObstacleButton(
+fun AddObstacleButton(
     isEnabled: Boolean,
     parkourId: Int,
     selectedObstacle: Obstacle?,
@@ -276,31 +255,18 @@ fun AjoutObstacleButton(
     }
 }
 
-
 @Composable
-fun CreerObstacleButton(course: Course) {
+fun CreateNewObstacleButton(course: Course) {
     val context = LocalContext.current
     Button(
-        onClick = {onCreerObstacleClick(context, course)},
+        onClick = { onCreateObstacleClick(context, course) },
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("Creer un obstacle")
+        Text("Créer un obstacle")
     }
 }
 
-fun onClickSupprimer(item: CourseObstacle, obstacleViewModel: ObstaclesViewModel, onObstacleSup:() -> Unit) {
-    val allObstacles = obstacleViewModel.allObstacles
-    val allObstaclesList = allObstacles.value ?: emptyList()
-    for (obstacle in allObstaclesList){
-        if (obstacle.name == item.obstacleName){
-            obstacleViewModel.removeObstacle((obstacle.id!!))
-            onObstacleSup()
-        }
-    }
-
-}
-
-fun onCreerObstacleClick(context : Context, course: Course) {
+fun onCreateObstacleClick(context: Context, course: Course) {
     val intent = Intent(context, AjoutObstacles::class.java)
     intent.putExtra("course", course)
     context.startActivity(intent)
@@ -308,8 +274,8 @@ fun onCreerObstacleClick(context : Context, course: Course) {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview3() {
+fun PreviewObstaclesPage() {
     ParkourTheme {
-        //ObstaclesPage("Android")
+        //Preview content here if necessary
     }
 }
