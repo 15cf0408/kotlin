@@ -5,16 +5,21 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,7 +29,6 @@ import com.but.parkour.clientkotlin.models.Competition
 import com.but.parkour.clientkotlin.models.Competitor
 import com.but.parkour.concurrents.viewmodel.CompetitorViewModel
 import com.but.parkour.ui.theme.ParkourTheme
-
 
 class InscriptionConcurent : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,34 +78,30 @@ fun InscriptionPage(
     Log.d("InscriptionPage", "Competitors inscrit dans la course: $competitorsInscrit")
     var selectedCompetitor by remember { mutableStateOf<Competitor?>(null) }
     var expanded by remember { mutableStateOf(false) }
-    var participants by remember { mutableStateOf(emptyList<Competitor>()) }
     var searchQuery by remember { mutableStateOf("") }
-
     val competitionStatus = competition?.status
-
-
-    LaunchedEffect(competitorsInscrit) {
-        participants = competitorsInscrit
-    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFF2C3E50), Color(0xFF4CA1AF))
+                )
+            )
             .padding(16.dp)
-            .padding(top = 32.dp, bottom = 32.dp)
     ) {
         HeaderText(compet)
         Spacer(modifier = Modifier.height(8.dp))
+
         ListParticipants(
-            concurrents = participants,
+            concurrents = competitorsInscrit,
             modifier = Modifier.weight(1f),
             competitionId = competitionId,
             competitorViewModel = competitorViewModel,
         )
 
-        //si la competition est not_ready ou not started on peut ajouter un concurrent
-        if(competitionStatus == Competition.Status.not_ready
-            || competitionStatus == Competition.Status.not_started) {
+        if (competitionStatus == Competition.Status.not_ready || competitionStatus == Competition.Status.not_started) {
             CompetitorDropdown(
                 selectedCompetitor = selectedCompetitor,
                 expanded = expanded,
@@ -111,14 +111,9 @@ fun InscriptionPage(
                     selectedCompetitor = competitor
                     expanded = false
                 },
-                onSearchQueryChanged = { query ->
-                    searchQuery = query
-                },
-                onExpandedChanged = { isExpanded ->
-                    expanded = isExpanded
-                },
+                onSearchQueryChanged = { query -> searchQuery = query },
+                onExpandedChanged = { expanded = it }
             )
-
 
             Spacer(modifier = Modifier.height(16.dp))
             InscriptionButton(
@@ -126,8 +121,8 @@ fun InscriptionPage(
                 onInscription = {
                     selectedCompetitor?.let { competitor ->
                         competitionId?.let { id ->
-                            if (competitor.id != null) {
-                                competitorViewModel.registerCompetitor(id, competitor.id)
+                            competitor.id?.let {
+                                competitorViewModel.registerCompetitor(id, it)
                                 selectedCompetitor = null
                                 searchQuery = ""
                             }
@@ -139,13 +134,15 @@ fun InscriptionPage(
     }
 }
 
-
 @Composable
 fun HeaderText(compet: String) {
     Text(
         text = compet,
         modifier = Modifier.padding(bottom = 16.dp),
-        style = MaterialTheme.typography.titleLarge.copy(color = Color.DarkGray, fontWeight = FontWeight.Bold)
+        style = MaterialTheme.typography.titleLarge.copy(
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
     )
 }
 
@@ -157,55 +154,37 @@ fun CompetitorDropdown(
     competitors: List<Competitor>,
     onCompetitorSelected: (Competitor) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
-    onExpandedChanged: (Boolean) -> Unit,
-
+    onExpandedChanged: (Boolean) -> Unit
 ) {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .padding(bottom = 16.dp)) {
-        Text(
-            text = selectedCompetitor?.firstName ?: "Selectionner un concurrent",
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.Gray)
-                .padding(16.dp)
-                .clickable { onExpandedChanged(true) }
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChanged(false) }
-        ) {
-            Column {
-
-                TextField(
-                    value = searchQuery,
-                    onValueChange = onSearchQueryChanged,
-                    placeholder = { Text("Search competitor") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-                val filteredCompetitors = competitors.filter { it.firstName?.contains(searchQuery, ignoreCase = true) == true }
-                filteredCompetitors.forEach { competitor ->
+    Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+        Button(onClick = { onExpandedChanged(true) }) {
+            Text(selectedCompetitor?.firstName ?: "Sélectionner un concurrent")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChanged(false) }) {
+            TextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChanged,
+                placeholder = { Text("Rechercher un concurrent") },
+                modifier = Modifier.padding(8.dp)
+            )
+            competitors.filter { it.firstName?.contains(searchQuery, true) == true }
+                .forEach { competitor ->
                     DropdownMenuItem(
-                        text = { Text(competitor.firstName ?: "Unknown") },
+                        text = { Text(competitor.firstName ?: "Inconnu") },
                         onClick = { onCompetitorSelected(competitor) }
                     )
                 }
-            }
         }
     }
 }
+
 @Composable
 fun ListParticipants(
     concurrents: List<Competitor>,
     modifier: Modifier = Modifier,
-    onChronoClick: ((Competitor) -> Unit)? = null,
     competitionId: Int?,
-    competitorViewModel: CompetitorViewModel?,
+    competitorViewModel: CompetitorViewModel?
 ) {
-    var selectedCompetitor by remember { mutableStateOf<Competitor?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -213,86 +192,43 @@ fun ListParticipants(
     ) {
         items(concurrents) { competitor ->
             Card(
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
-                    .border(3.dp, Color.Black, shape = MaterialTheme.shapes.medium)
-                    .padding(4.dp)
+                    .shadow(8.dp, RoundedCornerShape(12.dp))
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = "${competitor.firstName} ${competitor.lastName}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    if(EditionMode.isEnable.value) {
-                        Button(onClick = {
-                                selectedCompetitor = competitor
-                                showDialog = true
-                            },colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red
-                            )
-                        ) { Text("Supprimer") }
-                    }
-                    if (onChronoClick != null) {
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = { onChronoClick(competitor) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Chronométrer")
-                            }
-                        }
+
+                    Button(
+                        onClick = {
+                            competitorViewModel?.unregisterCompetitior(competitionId!!, competitor.id!!)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
+                        Text("❌ Supprimer", color = Color.White)
                     }
                 }
             }
         }
     }
-    if(showDialog && selectedCompetitor != null) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Confirmation") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer cet obstacle ?") },
-            confirmButton = {
-                Button(onClick = {
-                        selectedCompetitor?.let { onClickSupprimerCompetitor(it, competitionId, competitorViewModel!!) }
-                        showDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red
-                    )
-                ) {
-                    Text("Oui")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Non")
-                }
-            }
-        )
-    }
-}
-
-fun onClickSupprimerCompetitor(
-    it: Competitor,
-    competitionId: Int?,
-    competitorViewModel: CompetitorViewModel
-) {
-    competitorViewModel.unregisterCompetitior(competitionId!!, it.id!!)
 }
 
 @Composable
-fun InscriptionButton(
-    selectedCompetitor: Competitor?,
-    onInscription: () -> Unit
-) {
+fun InscriptionButton(selectedCompetitor: Competitor?, onInscription: () -> Unit) {
     Button(
         onClick = onInscription,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C))
     ) {
-        Text(text = "Inscrire un concurrent")
+        Text(text = "➕ Inscrire un concurrent", color = Color.White)
     }
 }
-

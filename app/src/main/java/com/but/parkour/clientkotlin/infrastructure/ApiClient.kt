@@ -21,7 +21,7 @@ class ApiClient(
     private var baseUrl: String = defaultBasePath,
     private val okHttpClientBuilder: OkHttpClient.Builder? = null,
     private val serializerBuilder: Moshi.Builder = Moshi.Builder()
-        .add(BooleanAdapter)
+        .add(BooleanAdapter())
         .add(CompetitionCreateGenderAdapter())
     ,
     private val callFactory: Call.Factory? = null,

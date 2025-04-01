@@ -6,31 +6,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.but.parkour.EditionMode
 import com.but.parkour.clientkotlin.models.Competition
@@ -53,7 +45,6 @@ class ListeCompetitions : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         competitions = competitions
                     )
-
                 }
             }
         }
@@ -76,22 +67,25 @@ fun CompetitionPage(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 16.dp)
+            .padding(24.dp)
+            .background(Color(0xFFFAFAFA)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         TitreCompetition()
         EditionMode()
 
-        if(isLoading) {
+        if (isLoading) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color(0xFFD32F2F))
             }
-        }else if(competitions.isEmpty()){
+        } else if (competitions.isEmpty()) {
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -99,22 +93,20 @@ fun CompetitionPage(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Aucune competition",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Aucune compétition disponible",
+                    style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray)
                 )
             }
-        }else{
+        } else {
             ListCompetitions(
                 items = competitions,
                 modifier = Modifier.weight(1f)
             )
         }
 
-
-        if(EditionMode.isEnable.value) {
+        if (EditionMode.isEnable.value) {
             EditionModeEnable(context)
         }
-
     }
 }
 
@@ -122,88 +114,105 @@ fun CompetitionPage(
 fun EditionMode() {
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Activer le mode édition",
+            text = "édition",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD32F2F)
         )
+        Spacer(modifier = Modifier.width(8.dp))
         RadioButton(
             selected = EditionMode.isEnable.value,
             onClick = {
                 EditionMode.isEnable.value = !EditionMode.isEnable.value
             },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = Color(0xFFD32F2F),
+                unselectedColor = Color.Gray
+            )
         )
     }
 }
 
 @Composable
-fun TitreCompetition(){
+fun TitreCompetition() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Bienvenue dans Parkour !",
-            modifier = Modifier.padding(bottom = 16.dp),
-            style = MaterialTheme.typography.titleLarge.copy(color = Color.DarkGray, fontWeight = FontWeight.Bold),
-
+            text = "Parkour !",
+            modifier = Modifier.padding(bottom = 24.dp),
+            style = MaterialTheme.typography.headlineLarge.copy(
+                color = Color(0xFFD32F2F),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
+        )
     }
 }
 
 @Composable
-fun EditionModeEnable(context: Context){
-    Column{
+fun EditionModeEnable(context: Context) {
+    Column {
         Button(
             onClick = { onClickAjouterCompetition(context) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
         ) {
             Text(
-                text = "Ajouter une competition"
+                text = "Ajouter une compétition",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
             )
         }
 
         Button(
             onClick = { onGestionConcurrents(context) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
         ) {
             Text(
-                text = "Gerer les concurrents"
+                text = "Gérer les concurrents",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
             )
         }
-
     }
 }
-
 
 @Composable
 fun ListCompetitions(
     items: List<Competition>,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-    ) {
 
+    ) {
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+
         ) {
             items(items) { competition ->
                 CompetitionCard(
                     competition = competition,
                 )
             }
-
         }
     }
 }
-
 
 @Composable
 fun CompetitionCard(
@@ -214,16 +223,21 @@ fun CompetitionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .border(2.dp, Color.Black, shape = MaterialTheme.shapes.medium)
+
+
+
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = competition.name ?: "Nom inconnu",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD32F2F)
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
             Row(
@@ -237,58 +251,54 @@ fun CompetitionCard(
                         else -> "Non défini"
                     }
                     Text(
-                        text = "Age minimal: ${competition.ageMin} ans",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Âge minimal: ${competition.ageMin} ans",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFFD32F2F))
                     )
                     Text(
-                        text = "Age maximal: ${competition.ageMax} ans",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Âge maximal: ${competition.ageMax} ans",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFFD32F2F))
                     )
                     Text(
                         text = "Genre: $genre",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFFD32F2F))
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     val status = when (competition.status) {
                         Competition.Status.not_ready -> "Non prête"
                         Competition.Status.not_started -> "Non commencée"
-                        Competition.Status.started-> "Commencée"
+                        Competition.Status.started -> "Commencée"
                         Competition.Status.finished -> "Terminée"
                         else -> "Non défini"
                     }
                     Text(
-                        text = "Status: $status",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Statut: $status",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFFD32F2F))
                     )
                     Text(
                         text = "Chute" + if (competition.hasRetry == true) " autorisée" else " non autorisée",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFFD32F2F))
                     )
                 }
             }
 
             Button(
-                onClick = {onItemClickDetails(competition, context)},
+                onClick = { onItemClickDetails(competition, context) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
             ) {
-                Text("Voir détails")
+                Text("Voir détails", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
-
 fun onItemClickDetails(competition: Competition, context: Context) {
     val intent = Intent(context, DetailsCompetition::class.java)
     intent.putExtra("competition", competition)
     context.startActivity(intent)
-}
-
-fun onClickSupprimerCompetition(competition: Competition, competitionViewModel: CompetitionViewModel) {
-    competitionViewModel.removeCompetition(competition.id!!)
 }
 
 fun onClickAjouterCompetition(context: Context) {
@@ -301,18 +311,15 @@ fun onGestionConcurrents(context: Context) {
     context.startActivity(intent)
 }
 
-
-
-
 @Preview(showBackground = true)
 @Composable
 fun CompetitionPreview() {
     ParkourTheme {
-        Competition(
-//            competitions = listOf(
-//                Competition(name = "Competition 1"),
-//                Competition(name = "Competition 2")
-//            )
+        CompetitionPage(
+            competitions = listOf(
+                Competition(name = "Competition 1"),
+                Competition(name = "Competition 2")
+            )
         )
     }
 }

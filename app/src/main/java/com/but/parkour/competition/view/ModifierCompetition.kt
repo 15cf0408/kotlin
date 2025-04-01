@@ -1,17 +1,22 @@
 package com.but.parkour.competition.view
 
-import android.content.Intent
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.but.parkour.clientkotlin.models.Competition
 import com.but.parkour.clientkotlin.models.CompetitionUpdate
 import com.but.parkour.clientkotlin.models.CompetitionUpdate.Gender
@@ -25,7 +30,7 @@ class ModifierCompetition : ComponentActivity() {
         val competition = intent.getSerializableExtra("competition") as? Competition
         setContent {
             ParkourTheme {
-                Scaffold (modifier = Modifier.fillMaxSize()){innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     competition?.let {
                         ModifierCompetitionForm(
                             modifier = Modifier.padding(innerPadding),
@@ -53,54 +58,75 @@ fun ModifierCompetitionForm(modifier: Modifier = Modifier, oldCompetition: Compe
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(24.dp)
+            .background(Color(0xFFFFEBEE)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
-        ){
+        ) {
             Text(
-                "Modifier la competition ${oldCompetition.name}",
-                style = MaterialTheme.typography.titleLarge
+                text = "Modifier la compétition ${oldCompetition.name}",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD32F2F)
+                )
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Nom") },
+            label = { Text("Nom", color = Color(0xFFD32F2F)) },
+            textStyle = LocalTextStyle.current.copy(color = Color(0xFFD32F2F)),
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = ageMin,
             onValueChange = { ageMin = it },
-            label = { Text("Age Min") },
+            label = { Text("Âge Min", color = Color(0xFFD32F2F)) },
+            textStyle = LocalTextStyle.current.copy(color = Color(0xFFD32F2F)),
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = ageMax,
             onValueChange = { ageMax = it },
-            label = { Text("Age Max") },
+            label = { Text("Âge Max", color = Color(0xFFD32F2F)) },
+            textStyle = LocalTextStyle.current.copy(color = Color(0xFFD32F2F)),
             modifier = Modifier.fillMaxWidth()
         )
-        Text("Genre")
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Genre", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Row {
             RadioButton(
                 selected = gender == "H",
-                onClick = { gender = "H" }
+                onClick = { gender = "H" },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Color(0xFFD32F2F),
+                    unselectedColor = Color.Gray
+                )
             )
-            Text("Homme")
+            Text("Homme", color = Color(0xFFD32F2F))
             Spacer(modifier = Modifier.width(16.dp))
             RadioButton(
                 selected = gender == "F",
-                onClick = { gender = "F" }
+                onClick = { gender = "F" },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Color(0xFFD32F2F),
+                    unselectedColor = Color.Gray
+                )
             )
-            Text("Femme")
+            Text("Femme", color = Color(0xFFD32F2F))
         }
-        Text("Status")
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Status", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,7 +135,8 @@ fun ModifierCompetitionForm(modifier: Modifier = Modifier, oldCompetition: Compe
             OutlinedTextField(
                 value = status,
                 onValueChange = { },
-                label = { Text("Status") },
+                label = { Text("Status", color = Color(0xFFD32F2F)) },
+                textStyle = LocalTextStyle.current.copy(color = Color(0xFFD32F2F)),
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true
             )
@@ -129,10 +156,10 @@ fun ModifierCompetitionForm(modifier: Modifier = Modifier, oldCompetition: Compe
             }
         }
         if (errorMessage.isNotEmpty()) {
-            Text(text = errorMessage, color = androidx.compose.ui.graphics.Color.Red)
+            Text(text = errorMessage, color = Color.Red, modifier = Modifier.padding(top = 16.dp))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = {
                 val validationResult = validateFields(name, ageMin, ageMax, gender, status)
@@ -154,16 +181,17 @@ fun ModifierCompetitionForm(modifier: Modifier = Modifier, oldCompetition: Compe
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
+                .padding(top = 24.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
         ) {
-            Text("Modifier la competition")
+            Text("Modifier la compétition", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 fun validateFields(name: String, ageMin: String, ageMax: String, gender: String, status: String): String? {
     if (name.isBlank() || ageMin.isBlank() || ageMax.isBlank() || gender.isBlank() || status.isBlank()) {
-        return "Tous les champs sont obligatiores"
+        return "Tous les champs sont obligatoires"
     }
     if (gender != "H" && gender != "F") {
         return "Le genre doit être Homme ou Femme"

@@ -6,32 +6,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.but.parkour.clientkotlin.models.CompetitionCreate
 import com.but.parkour.competition.viewmodel.CompetitionViewModel
 import com.but.parkour.ui.theme.ParkourTheme
@@ -42,7 +31,11 @@ class AjoutCompetition : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ParkourTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF1E1E1E))
+                ) { innerPadding ->
                     AjtCompetPage(modifier = Modifier.padding(innerPadding))
                 }
             }
@@ -62,176 +55,145 @@ fun AjtCompetPage(modifier: Modifier = Modifier) {
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .background(Color(0xFF2D2D2D)),
+        verticalArrangement = Arrangement.Center
+    ) {
         Text(
-            text = "Ajouter une competition",
-            modifier = Modifier.padding(32.dp)
+            text = "Ajouter une compétition",
+            fontSize = 24.sp,
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         TextField(
             value = nom,
             onValueChange = { nom = it },
-            label = { Text("Nom") },
-            modifier = Modifier.padding(top = 16.dp)
+            label = { Text("Nom", color = Color.White) },
+            textStyle = LocalTextStyle.current.copy(color = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color(0xFF3C3C3C))
         )
 
         TextField(
             value = ageMin,
             onValueChange = { ageMin = it },
-            label = { Text("Age Minimum") },
+            label = { Text("Âge Minimum", color = Color.White) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.padding(top = 16.dp)
+            textStyle = LocalTextStyle.current.copy(color = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color(0xFF3C3C3C))
         )
 
         TextField(
             value = ageMax,
             onValueChange = { ageMax = it },
-            label = { Text("Age Maximum") },
+            label = { Text("Âge Maximum", color = Color.White) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.padding(top = 16.dp)
+            textStyle = LocalTextStyle.current.copy(color = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color(0xFF3C3C3C))
         )
 
-        Box(modifier = Modifier.padding(top = 16.dp)) {
-            Text(
-                text = selectedGender,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color.Gray)
-                    .padding(16.dp)
-                    .clickable { genderExpanded = true }
-            )
-            DropdownMenu(
-                expanded = genderExpanded,
-                onDismissRequest = { genderExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Homme") },
-                    onClick = {
-                        selectedGender = "Homme"
-                        genderExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Femme") },
-                    onClick = {
-                        selectedGender = "Femme"
-                        genderExpanded = false
-                    }
-                )
-            }
-        }
-
-        Box(modifier = Modifier.padding(top = 16.dp)) {
-            Text(
-                text = selectedOption,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color.Gray)
-                    .padding(16.dp)
-                    .clickable { expanded = true }
-            )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Oui") },
-                    onClick = {
-                        selectedOption = "Oui"
-                        expanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Non") },
-                    onClick = {
-                        selectedOption = "Non"
-                        expanded = false
-                    }
-                )
-            }
-        }
+        DropdownSelector("Genre", selectedGender, genderExpanded) { genderExpanded = it }
+        DropdownSelector("Plusieurs essais ?", selectedOption, expanded) { expanded = it }
 
         if (errorMessage.isNotEmpty()) {
             Text(
                 text = errorMessage,
                 color = Color.Red,
-                modifier = Modifier.padding(top = 16.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
 
-        Row {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Button(
-                onClick = {
-                    if (nom.isEmpty() || ageMin.isEmpty() || ageMax.isEmpty() || selectedGender == "Genre" || selectedOption == "Plusieurs essais ?") {
-                        errorMessage = "Tous les champs sont obligatoires"
-                    } else {
-                        val ageMinInt = ageMin.toIntOrNull()
-                        val ageMaxInt = ageMax.toIntOrNull()
-                        if (ageMinInt == null || ageMaxInt == null) {
-                            errorMessage = "L'âge minimum et maximum doivent être des nombres entiers"
-                        } else {
-                            if(ageMinInt > ageMaxInt) {
-                                errorMessage = "L'âge minimum doit être inférieur à l'âge maximum"
-                            } else {
-                                errorMessage = ""
-                                onClickAjouterCompetition(
-                                    nom,
-                                    ageMin,
-                                    ageMax,
-                                    selectedGender,
-                                    selectedOption,
-                                    context
-                                )
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.padding(top = 32.dp)
+                onClick = { handleAjouter(nom, ageMin, ageMax, selectedGender, selectedOption, context) { errorMessage = it } },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
             ) {
-                Text("Ajouter")
+                Text("Ajouter", color = Color.White)
             }
             Button(
                 onClick = { onClickAnnuler(context) },
-                modifier = Modifier.padding(top = 32.dp, start = 64.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
             ) {
-                Text("Annuler")
+                Text("Annuler", color = Color.White)
             }
         }
     }
 }
-
-fun onClickAjouterCompetition(name: String, ageMin: String, ageMax: String, gender: String, multipleAttempts: String, context: Context) {
-    val competition = CompetitionCreate(
-        name = name,
-        ageMin = ageMin.toInt(),
-        ageMax = ageMax.toInt(),
-        gender = when(gender) {
-            "Homme" -> CompetitionCreate.Gender.H
-            "Femme" -> CompetitionCreate.Gender.F
-            else -> throw IllegalArgumentException("Genre invalide")
-        },
-        hasRetry = when(multipleAttempts) {
-            "Oui" -> true
-            "Non" -> false
-            else -> throw IllegalArgumentException("Option invalide")
+@Composable
+fun DropdownSelector(title: String, selected: String, expanded: Boolean, onExpandChange: (Boolean) -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+            .padding(16.dp)
+            .clickable { onExpandChange(true) }
+    ) {
+        Text(
+            text = selected,
+            color = Color.White
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandChange(false) }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Homme") },
+                onClick = { onExpandChange(false) }
+            )
+            DropdownMenuItem(
+                text = { Text("Femme") },
+                onClick = { onExpandChange(false) }
+            )
         }
-    )
+    }
+}
 
-    val competitionViewModel = CompetitionViewModel()
-    competitionViewModel.addCompetition(competition)
-    val intent = Intent(context, ListeCompetitions::class.java)
-    context.startActivity(intent)
+fun handleAjouter(nom: String, ageMin: String, ageMax: String, gender: String, multipleAttempts: String, context: Context, setError: (String) -> Unit) {
+    if (nom.isEmpty() || ageMin.isEmpty() || ageMax.isEmpty() || gender == "Genre" || multipleAttempts == "Plusieurs essais ?") {
+        setError("Tous les champs sont obligatoires")
+        return
+    }
+
+    val ageMinInt = ageMin.toIntOrNull()
+    val ageMaxInt = ageMax.toIntOrNull()
+    if (ageMinInt == null || ageMaxInt == null || ageMinInt > ageMaxInt) {
+        setError("L'âge minimum doit être inférieur à l'âge maximum")
+        return
+    }
+
+    setError("")
+    val competition = CompetitionCreate(
+        name = nom,
+        ageMin = ageMinInt,
+        ageMax = ageMaxInt,
+        gender = if (gender == "Homme") CompetitionCreate.Gender.H else CompetitionCreate.Gender.F,
+        hasRetry = multipleAttempts == "Oui"
+    )
+    CompetitionViewModel().addCompetition(competition)
+    context.startActivity(Intent(context, ListeCompetitions::class.java))
 }
 
 fun onClickAnnuler(context: Context) {
-    val intent = Intent(context, ListeCompetitions::class.java)
-    context.startActivity(intent)
+    context.startActivity(Intent(context, ListeCompetitions::class.java))
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    ParkourTheme {
-        AjtCompetPage()
-    }
+fun PreviewAjtCompetPage() {
+    ParkourTheme { AjtCompetPage() }
 }

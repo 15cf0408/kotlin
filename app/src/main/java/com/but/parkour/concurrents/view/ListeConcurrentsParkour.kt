@@ -3,54 +3,45 @@ package com.but.parkour.concurrents.view
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.but.parkour.clientkotlin.models.Course
-import com.but.parkour.concurrents.ui.theme.ParkourTheme
-import com.but.parkour.concurrents.viewmodel.CompetitorViewModel
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.platform.LocalContext
-import com.but.parkour.chrono.view.Chronometre
 import com.but.parkour.clientkotlin.models.Competition
+import com.but.parkour.clientkotlin.models.Competitor
+import com.but.parkour.concurrents.viewmodel.CompetitorViewModel
+import com.but.parkour.chrono.view.Chronometre
 
 class ListeConcurrentsParkour : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val competition = intent.getSerializableExtra("competition") as Competition
-        val course = intent.getSerializableExtra("course") as Course
         setContent {
-            Scaffold(modifier = Modifier.fillMaxSize()){ innerPadding ->
-                ConcurrentPage(
-                    modifier = Modifier.padding(innerPadding),
-                    competition,
-                    course
-                )
-            }
+            CompetitorScreen(competition, this)
         }
     }
 }
 
 @Composable
-fun ConcurrentPage(modifier: Modifier = Modifier, competition: Competition, course: Course) {
+fun CompetitorScreen(competition: Competition, context: Context) {
     val competitorViewModel: CompetitorViewModel = viewModel()
     val participants by competitorViewModel.competitorsCourse.observeAsState(emptyList())
 
@@ -60,46 +51,81 @@ fun ConcurrentPage(modifier: Modifier = Modifier, competition: Competition, cour
         }
     }
 
-    Column(
-        modifier = modifier
+    // Dégradé de fond
+    Box(
+        modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .padding(top = 32.dp, bottom = 32.dp)
-
-    ) {
-        Text(
-            text = competition.name ?: "Unknown",
-            modifier = Modifier.padding(bottom = 16.dp),
-            style = MaterialTheme.typography.titleLarge.copy(
-                color = Color.DarkGray,
-                fontWeight = FontWeight.Bold
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF2C3E50), Color(0xFF4CA1AF))
+                )
             )
-        )
+            .padding(16.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                text = competition.name ?: "Compétition",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Log.d("ListeConcurrents", "Participants: $participants")
-        val context = LocalContext.current
-        ListParticipants(
-            concurrents = participants,
-            modifier = Modifier.weight(1f),
-            onChronoClick = { competitor ->
-                onItemClickChrono(competition, course, context)
-            },
-            competitionId = null,
-            competitorViewModel = competitorViewModel,
-        )
-
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(participants) { competitor ->
+                    CompetitorCard(competitor) {
+                        startChronoScreen(context, competition, competitor)
+                    }
+                }
+            }
+        }
     }
 }
 
+@Composable
+fun CompetitorCard(competitor: Competitor, onClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(12.dp))
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1ABC9C))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "${competitor.firstName} ${competitor.lastName}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
 
+            Spacer(modifier = Modifier.height(8.dp))
 
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C))
+            ) {
+                Text("⏱ Chronométrer", color = Color.White)
+            }
+        }
+    }
+}
 
-fun onItemClickChrono(competition: Competition, course: Course, context: Context) {
+fun startChronoScreen(context: Context, competition: Competition, competitor: Competitor) {
     val intent = Intent(context, Chronometre::class.java).apply {
         putExtra("competition", competition)
-        putExtra("course", course)
+        putExtra("competitor", competitor)
     }
     context.startActivity(intent)
 }

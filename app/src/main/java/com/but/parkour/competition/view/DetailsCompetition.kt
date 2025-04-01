@@ -6,17 +6,18 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.but.parkour.clientkotlin.models.Competition
 import com.but.parkour.ui.theme.ParkourTheme
@@ -44,8 +45,6 @@ class DetailsCompetition : ComponentActivity() {
     }
 }
 
-
-
 @Composable
 fun DetailsCompetitionPage(
     competition: Competition,
@@ -56,49 +55,54 @@ fun DetailsCompetitionPage(
     var currentCompetition by remember { mutableStateOf(competition) }
     val competitionViewModel: CompetitionViewModel = viewModel()
 
-
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(24.dp)
+            .background(Color(0xFFFFEBEE)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            PageTitle()
-        }
+        PageTitle()
         CompetitionDetailsCard(currentCompetition)
-        Spacer(modifier = Modifier.height(16.dp))
-        CompetitionActions(currentCompetition){
-            updatedCompetition -> currentCompetition = updatedCompetition
+        Spacer(modifier = Modifier.height(24.dp))
+        CompetitionActions(currentCompetition) { updatedCompetition ->
+            currentCompetition = updatedCompetition
         }
     }
 }
 
 @Composable
-fun PageTitle(){
+fun PageTitle() {
     Text(
-        text = "Détails de la compétition",
-        style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.padding(bottom = 16.dp)
+        text = "Détails de la Compétition",
+        style = MaterialTheme.typography.headlineLarge.copy(
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD32F2F)
+        ),
+        modifier = Modifier.padding(bottom = 24.dp)
     )
 }
-
 
 @Composable
 private fun CompetitionDetailsCard(competition: Competition) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp)
+            .padding(vertical = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFCDD2)),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = competition.name ?: "Nom inconnu",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFB71C1C)
+                ),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -116,15 +120,14 @@ private fun CompetitionDetailsCard(competition: Competition) {
                 else -> "Non défini"
             }
 
-            Text("Age minimal: ${competition.ageMin} ans")
-            Text("Age maximal: ${competition.ageMax} ans")
-            Text("Genre: $genre")
-            Text("Status: $status")
-            Text("Chute" + if (competition.hasRetry == true) " autorisée" else " non autorisée")
+            Text("Âge minimal: ${competition.ageMin} ans", color = Color(0xFFB71C1C))
+            Text("Âge maximal: ${competition.ageMax} ans", color = Color(0xFFB71C1C))
+            Text("Genre: $genre", color = Color(0xFFB71C1C))
+            Text("Statut: $status", color = Color(0xFFB71C1C))
+            Text("Chute" + if (competition.hasRetry == true) " autorisée" else " non autorisée", color = Color(0xFFB71C1C))
         }
     }
 }
-
 
 @Composable
 private fun CompetitionActions(
@@ -136,12 +139,9 @@ private fun CompetitionActions(
 
     when (status) {
         Competition.Status.not_ready -> {
-            //peut supprimer la compétition
-            //peut inscrire des concurrents
             ConcurrentButton(context, competition)
             ParkoursButton(context, competition)
             ValiderCompetitionButton(competition, onCompetitionUpdate)
-            //peut modifier la compétition et ses courses
             if (EditionMode.isEnable.value) {
                 ModifyButton(context, competition)
                 DeleteButton(context, competition)
@@ -150,16 +150,13 @@ private fun CompetitionActions(
         Competition.Status.not_started -> {
             ConcurrentButton(context, competition)
             ParkoursButton(context, competition)
-            //peut inscrire des concurrents
         }
         Competition.Status.started -> {
             ConcurrentButton(context, competition)
             ParkoursButton(context, competition)
-            //aucune modif autorisée
         }
         Competition.Status.finished -> {
             ViewResultsButton()
-            //on peut que consulter les resultats
         }
         null -> {}
     }
@@ -184,11 +181,11 @@ fun ValiderCompetitionButton(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
     ) {
-        Text("Valider le parcours")
+        Text("Valider le parcours", color = Color.White)
     }
-
 }
 
 @Composable
@@ -197,12 +194,12 @@ fun ViewResultsButton() {
         onClick = { },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
     ) {
-        Text("Afficher les resultats")
+        Text("Afficher les résultats", color = Color.White)
     }
 }
-
 
 @Composable
 private fun ModifyButton(context: Context, competition: Competition) {
@@ -214,9 +211,10 @@ private fun ModifyButton(context: Context, competition: Competition) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
     ) {
-        Text("Modifier la compétition")
+        Text("Modifier la compétition", color = Color.White)
     }
 }
 
@@ -230,9 +228,10 @@ private fun ConcurrentButton(context: Context, competition: Competition) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
     ) {
-        Text("Concurrents")
+        Text("Concurrents", color = Color.White)
     }
 }
 
@@ -246,9 +245,10 @@ private fun ParkoursButton(context: Context, competition: Competition) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
     ) {
-        Text("Courses")
+        Text("Courses", color = Color.White)
     }
 }
 
@@ -264,33 +264,30 @@ private fun DeleteButton(context: Context, competition: Competition) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Red
-        )
+            .padding(bottom = 16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
     ) {
-        Text("Supprimer la compétition")
+        Text("Supprimer la compétition", color = Color.White)
     }
 
-    if (showDialog ) {
+    if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Confirmation") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer cette competition ?") },
+            text = { Text("Êtes-vous sûr de vouloir supprimer cette compétition ?") },
             confirmButton = {
-                Button(onClick = {
-                    competition.id?.let{
-                        competitionViewModel.removeCompetition(it)
-                        val intent = Intent(context, ListeCompetitions::class.java)
-                        context.startActivity(intent)
-                    }
-                    showDialog = false
-                },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red
-                    )
+                Button(
+                    onClick = {
+                        competition.id?.let {
+                            competitionViewModel.removeCompetition(it)
+                            val intent = Intent(context, ListeCompetitions::class.java)
+                            context.startActivity(intent)
+                        }
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Oui")
+                    Text("Oui", color = Color.White)
                 }
             },
             dismissButton = {
@@ -301,4 +298,3 @@ private fun DeleteButton(context: Context, competition: Competition) {
         )
     }
 }
-
